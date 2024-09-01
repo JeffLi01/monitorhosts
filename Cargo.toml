@@ -5,6 +5,8 @@ edition = "2021"
 
 [dependencies]
 tray-item = "0.10.0"
+slint = "1.7.2"
 
 [build-dependencies]
 embed-resource = "2.4.3"
+slint-build = "1.7.2"

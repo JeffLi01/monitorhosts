@@ -1,65 +1,24 @@
-use std::sync::mpsc;
-use tray_item::{IconSource, TrayItem};
-
-enum Message {
-    Quit,
-    Add,
-    Clear,
-    Config,
-    About,
+pub mod ui {
+    slint::include_modules!();
 }
 
+mod tray;
+
+use tray::Message;
+use ui::*;
+
 fn main() {
-    let mut tray = TrayItem::new(
-        "MonitorHosts",
-        IconSource::Resource("default-icon"),
-    )
-    .unwrap();
-    tray.inner_mut().set_tooltip("MonitorHosts").unwrap();
-
-    tray.add_label("MonitorHosts").unwrap();
-
-    tray.inner_mut().add_separator().unwrap();
-
-    let (tx, rx) = mpsc::sync_channel(1);
-
-    let tx_clone = tx.clone();
-    tray.add_menu_item("添加", move || {
-        tx_clone.send(Message::Add).unwrap();
-    })
-    .unwrap();
-
-    let tx_clone = tx.clone();
-    tray.add_menu_item("清除", move || {
-        tx_clone.send(Message::Clear).unwrap();
-    })
-    .unwrap();
-
-    let tx_clone = tx.clone();
-    tray.add_menu_item("配置", move || {
-        tx_clone.send(Message::Config).unwrap();
-    })
-    .unwrap();
-
-    let tx_clone = tx.clone();
-    tray.add_menu_item("关于", move || {
-        tx_clone.send(Message::About).unwrap();
-    })
-    .unwrap();
-
-    tray.inner_mut().add_separator().unwrap();
-
-    let tx_clone = tx.clone();
-    tray.add_menu_item("Quit", move || {
-        tx_clone.send(Message::Quit).unwrap();
-    })
-    .unwrap();
-
+    let (join_handle, rx) = tray::setup();
     loop {
         match rx.recv() {
             Ok(Message::Quit) => {
                 println!("Quit");
                 break;
+            }
+            Ok(Message::MainWindow) => {
+                println!("MainWindow");
+                let window = MainWindow::new().unwrap();
+                window.run().unwrap();
             }
             Ok(Message::Add) => {
                 println!("Add");
@@ -73,7 +32,8 @@ fn main() {
             Ok(Message::About) => {
                 println!("About");
             }
-            _ => {}
+            Err(err) => eprintln!("{}", err),
         }
     }
+    join_handle.join().unwrap();
 }
