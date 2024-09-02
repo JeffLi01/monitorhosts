@@ -4,21 +4,26 @@ pub mod ui {
 
 mod tray;
 
+use std::sync::{atomic::{AtomicBool, Ordering}, Arc};
+
 use tray::Message;
 use ui::*;
 
 fn main() {
-    let (join_handle, rx) = tray::setup();
+    let shown_flag = Arc::new(AtomicBool::new(false));
+    let window = MainWindow::new().unwrap();
+    let (join_handle, rx) = tray::setup(shown_flag.clone());
     loop {
         match rx.recv() {
             Ok(Message::Quit) => {
                 println!("Quit");
                 break;
             }
-            Ok(Message::MainWindow) => {
+            Ok(Message::ShowMainWindow) => {
                 println!("MainWindow");
-                let window = MainWindow::new().unwrap();
+                shown_flag.store(true, Ordering::Relaxed);
                 window.run().unwrap();
+                shown_flag.store(false, Ordering::Relaxed);
             }
             Ok(Message::Add) => {
                 println!("Add");

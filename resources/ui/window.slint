@@ -1,14 +1,43 @@
+import { StandardTableView, VerticalBox } from "std-widgets.slint";
+
+export struct HostStatusModel {
+    hosts: [[StandardListViewItem]],
+}
+export global HostStatusAdapter {
+    in property <HostStatusModel> model: {
+        hosts: [
+            [ { text: "127.0.0.1" }, { text: "⬤" }, { text: "" }, { text: "" }, { text: "" }, { text: "" } ],
+            [ { text: "127.0.0.1" }, { text: "⬤" }, { text: "" }, { text: "" }, { text: "" }, { text: "" } ],
+            [ { text: "127.0.0.1" }, { text: "⬤" }, { text: "" }, { text: "" }, { text: "" }, { text: "" } ],
+            [ { text: "127.0.0.1" }, { text: "⬤" }, { text: "" }, { text: "" }, { text: "" }, { text: "" } ],
+        ]
+    };
+}
+
 export component MainWindow inherits Window {
     default-font-family: "Microsoft YaHei";
-    default-font-size: 48pt;
     title: "MonitorHosts";
     min-width: 640px;
     min-height: 480px;
     background: white;
     preferred-width: 1024px;
     preferred-height: 768px;
+    in property <HostStatusModel> model <=> HostStatusAdapter.model;
+    padding: 0px;
 
-    Text {
-        text: "主界面!";
+    VerticalBox {
+        padding: 0px;
+        spacing: 0px;
+        StandardTableView {
+            columns: [
+                { title: "主机" },
+                { title: "ICMP" },
+                { title: "HTTP" },
+                { title: "HTTPS" },
+                { title: "SSH" },
+                { title: "IPMI" },
+            ];
+            rows: root.model.hosts;
+        }
     }
 }
