@@ -1,0 +1,73 @@
+import { StandardButton, LineEdit, GridBox, CheckBox, GroupBox, VerticalBox } from "std-widgets.slint";
+
+export struct HostConfigModel {
+    name: string,
+    http: bool,
+    https: bool,
+    ssh: bool,
+    vnc: bool,
+    ipmi: bool,
+}
+
+export component AddDialog inherits Dialog {
+    title: "添加";
+    forward-focus: input;
+
+    in-out property <HostConfigModel> model: {
+        name: input.text,
+        http: i-http.checked,
+        https: i-https.checked,
+        ssh: i-ssh.checked,
+        vnc: i-vnc.checked,
+        ipmi: i-ipmi.checked,
+    };
+    callback action-ok(HostConfigModel);
+    callback action-cancel();
+
+    VerticalBox {
+        GroupBox {
+            title: "要监控的IP";
+
+            input := LineEdit {
+                placeholder-text: "IP";
+            }
+        }
+        GroupBox {
+            title: "服务列表";
+            GridBox {
+                Row {
+                    Text { vertical-alignment: center; text: "HTTP"; }
+                    i-http := CheckBox {}
+                }
+                Row {
+                    Text { vertical-alignment: center; text: "HTTPS"; }
+                    i-https := CheckBox {}
+                }
+                Row {
+                    Text { vertical-alignment: center; text: "SSH"; }
+                    i-ssh := CheckBox {}
+                }
+                Row {
+                    Text { vertical-alignment: center; text: "VNC"; }
+                    i-vnc := CheckBox {}
+                }
+                Row {
+                    Text { vertical-alignment: center; text: "IPMI"; }
+                    i-ipmi := CheckBox {}
+                }
+            }
+        }
+    }
+    StandardButton {
+        kind: ok;
+        clicked => {
+            root.action-ok(root.model);
+        }
+    }
+    StandardButton {
+        kind: cancel;
+        clicked => {
+            root.action-cancel();
+        }
+    }
+}

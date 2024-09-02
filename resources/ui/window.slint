@@ -1,17 +1,8 @@
-import { StandardTableView, VerticalBox } from "std-widgets.slint";
+import { StandardTableView, VerticalBox, HorizontalBox, Button } from "std-widgets.slint";
 
-export struct HostStatusModel {
-    hosts: [[StandardListViewItem]],
-}
-export global HostStatusAdapter {
-    in property <HostStatusModel> model: {
-        hosts: [
-            [ { text: "127.0.0.1" }, { text: "⬤" }, { text: "" }, { text: "" }, { text: "" }, { text: "" } ],
-            [ { text: "127.0.0.1" }, { text: "⬤" }, { text: "" }, { text: "" }, { text: "" }, { text: "" } ],
-            [ { text: "127.0.0.1" }, { text: "⬤" }, { text: "" }, { text: "" }, { text: "" }, { text: "" } ],
-            [ { text: "127.0.0.1" }, { text: "⬤" }, { text: "" }, { text: "" }, { text: "" }, { text: "" } ],
-        ]
-    };
+export global MainWindowAdapter {
+    in property <[string]> titles;
+    in property <[[StandardListViewItem]]> model;
 }
 
 export component MainWindow inherits Window {
@@ -22,22 +13,56 @@ export component MainWindow inherits Window {
     background: white;
     preferred-width: 1024px;
     preferred-height: 768px;
-    in property <HostStatusModel> model <=> HostStatusAdapter.model;
     padding: 0px;
+
+    in property <[string]> titles <=> MainWindowAdapter.titles;
+    in property <[[StandardListViewItem]]> model <=> MainWindowAdapter.model;
+    callback add-host(int);
+    callback remove-host(int);
+    callback config-host(int);
+    callback clear-hosts();
 
     VerticalBox {
         padding: 0px;
         spacing: 0px;
-        StandardTableView {
+        HorizontalBox {
+            Button {
+                text: "添加";
+                horizontal-stretch: 0;
+                clicked => { root.add-host(i-table-view.current-row); }
+            }
+            Button {
+                text: "删除";
+                horizontal-stretch: 0;
+                clicked => { root.remove-host(i-table-view.current-row); }
+                enabled: i-table-view.current-row >= 0;
+            }
+            Button {
+                text: "配置";
+                horizontal-stretch: 0;
+                clicked => { root.config-host(i-table-view.current-row); }
+                enabled: i-table-view.current-row >= 0;
+            }
+            Button {
+                text: "清除";
+                horizontal-stretch: 0;
+                clicked => { root.clear-hosts(); }
+                enabled: i-table-view.rows.length > 0;
+            }
+            Rectangle {
+                horizontal-stretch: 1;
+            }
+        }
+        i-table-view := StandardTableView {
             columns: [
-                { title: "主机" },
-                { title: "ICMP" },
-                { title: "HTTP" },
-                { title: "HTTPS" },
-                { title: "SSH" },
-                { title: "IPMI" },
+                { title: "主机名", horizontal_stretch: 1, min_width: 256px },
+                { title: "HTTP", horizontal_stretch: 0.1, min_width: 64px },
+                { title: "HTTPS", horizontal_stretch: 0.1, min_width: 64px },
+                { title: "SSH", horizontal_stretch: 0.1, min_width: 64px },
+                { title: "VNC", horizontal_stretch: 0.1, min_width: 64px },
+                { title: "IPMI", horizontal_stretch: 0.1, min_width: 64px },
             ];
-            rows: root.model.hosts;
+            rows: root.model;
         }
     }
 }
