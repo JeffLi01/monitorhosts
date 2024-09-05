@@ -25,6 +25,14 @@ pub fn setup(mgr: Arc<RwLock<Manager>>) -> MainWindow {
     });
 
     let manager = mgr.clone();
+    window.on_config_host(move |index| {
+        if index >= 0 {
+            let dialog = super::dialog::config_dialog(manager.clone(), index as usize);
+            dialog.show().unwrap();
+        }
+    });
+
+    let manager = mgr.clone();
     window.on_remove_host(move |index| {
         if index >= 0 {
             let dialog = super::dialog::remove_dialog(manager.clone(), index as usize);

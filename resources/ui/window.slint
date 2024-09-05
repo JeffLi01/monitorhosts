@@ -41,7 +41,7 @@ export component MainWindow inherits Window {
                 text: "配置";
                 horizontal-stretch: 0;
                 clicked => { root.config-host(i-table-view.current-row); }
-                enabled: i-table-view.current-row >= 0;
+                enabled: (i-table-view.current-row >= 0) && (i-table-view.current-row < i-table-view.rows.length);
             }
             Button {
                 text: "清除";

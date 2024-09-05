@@ -38,6 +38,13 @@ impl Manager {
         self.hosts.get(index)
     }
 
+    pub fn update_host(&mut self, index: usize, host: HostConfig) {
+        trace!("updating host from manager...");
+        self.hosts.remove(index);
+        self.hosts.insert(index, host);
+        self.updated = true;
+    }
+
     pub fn remove_host(&mut self, index: usize) {
         trace!("removing host from manager...");
         self.hosts.remove(index);

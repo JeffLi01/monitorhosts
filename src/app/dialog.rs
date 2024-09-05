@@ -4,8 +4,9 @@ use log::{trace, warn};
 use slint::*;
 
 use crate::{
-    manager::{HostConfig, Manager, Port}, ui::{ConfirmDialog, AddDialog}
+    manager::{HostConfig, Manager, Port}, ui::{ConfirmDialog, HostConfigDialog}
 };
+use crate::ui::HostConfigModel;
 
 pub fn add_dialog(mgr: Arc<RwLock<Manager>>) -> HostConfigDialog {
     let dialog = HostConfigDialog::new().unwrap();
@@ -33,6 +34,54 @@ pub fn add_dialog(mgr: Arc<RwLock<Manager>>) -> HostConfigDialog {
     let dialog_clone = dialog_weak.clone();
     dialog.on_action_cancel(move || {
         trace!("add-dialog::on_action_cancel");
+        dialog_clone.unwrap().hide().unwrap();
+    });
+    dialog
+}
+
+pub fn config_dialog(mgr: Arc<RwLock<Manager>>, index: usize) -> HostConfigDialog {
+    let m = mgr.read().unwrap();
+    let host = m.get_host(index).expect("the index {index} should be valid");
+    let dialog = HostConfigDialog::new().unwrap();
+    dialog.set_dialog_title("配置".into());
+    let mut model = HostConfigModel::default();
+    model.name = SharedString::from(&host.name);
+    host.ports
+        .iter()
+        .for_each(|(port, enabled)| {
+            match port {
+                Port::Http => model.http = *enabled,
+                Port::Https => model.https = *enabled,
+                Port::Ssh => model.ssh = *enabled,
+                Port::Vnc => model.vnc = *enabled,
+                Port::Ipmi => model.ipmi = *enabled,
+            }
+        });
+    dialog.set_input_model(model);
+    let dialog_weak = dialog.as_weak();
+    let dialog_clone = dialog_weak.clone();
+    let mgr = mgr.clone();
+    dialog.on_action_ok(move |host| {
+        trace!("config-dialog::on_action_ok: {host:?}");
+        let name = host.name.to_string();
+        if mgr.read().unwrap().contains_host(&name) {
+            let mut ports = BTreeMap::new();
+            ports.insert(Port::Http, host.http);
+            ports.insert(Port::Https, host.https);
+            ports.insert(Port::Ssh, host.ssh);
+            ports.insert(Port::Vnc, host.vnc);
+            ports.insert(Port::Ipmi, host.ipmi);
+            trace!("calling hmanager::update_host...");
+            mgr.write().unwrap().update_host(index, HostConfig::new(name, ports));
+            trace!("calling hmanager::update_host done");
+        } else {
+            warn!("host with name {name} does not exist");
+        }
+        dialog_clone.unwrap().hide().unwrap();
+    });
+    let dialog_clone = dialog_weak.clone();
+    dialog.on_action_cancel(move || {
+        trace!("config-dialog::on_action_cancel");
         dialog_clone.unwrap().hide().unwrap();
     });
     dialog
