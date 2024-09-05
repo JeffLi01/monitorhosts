@@ -1,34 +1,41 @@
-use std::{collections::{BTreeMap, HashMap}, fmt::Display, hash::Hash, time::Duration};
+use std::{collections::{BTreeMap, HashMap}, hash::Hash};
 
 use log::trace;
 
 pub struct Manager {
-    hosts: Vec<HostConfig>,
+    pub hosts: Vec<HostConfig>,
+    status: HashMap<(String, Port), bool>,
+    updated: bool,
 }
 
 impl Manager {
     pub fn new() -> Self {
-        Self { hosts: Vec::new() }
+        Self {
+            hosts: Vec::new(),
+            status: HashMap::new(),
+            updated: false,
+        }
+    }
+
+    pub fn updated(&self) -> bool {
+        self.updated
     }
 
     pub fn insert_host(&mut self, host: HostConfig) {
         trace!("inserting host to manager...");
         self.hosts.push(host);
+        self.updated = true;
     }
 
-    pub fn check(&self) -> Snapshot {
+    pub fn update(&mut self, name: String, port: Port, online: bool) {
+        self.status.insert((name, port), online);
+        self.updated = true;
+    }
+
+    pub fn capture(&mut self) -> Snapshot {
         let configs = self.hosts.clone();
-        let mut status = HashMap::new();
-        configs.iter()
-            .for_each(|config| {
-                config.ports.iter()
-                    .for_each(|(port, enabled)| {
-                        if *enabled {
-                            let alive = ping(&config.name, port.u16());
-                            status.insert((config.name.to_owned(), port.to_owned()), alive);
-                        }
-                    });
-            });
+        let status = self.status.clone();
+        self.updated = false;
         Snapshot::new(configs, status)
     }
 }
@@ -86,17 +93,5 @@ pub struct Snapshot {
 impl Snapshot {
     pub fn new(configs: Vec<HostConfig>, status: HashMap<(String, Port), bool>) -> Self {
         Self { configs, status }
-    }
-}
-
-use std::net::{TcpStream, SocketAddr};
-fn ping<S: Display>(name: S, port: u16) -> bool {
-    let addr: SocketAddr = format!("{name}:{port}").parse().expect("Invalid address");
-    match TcpStream::connect_timeout(&addr, Duration::from_secs(1)) {
-        Ok(_) => true,
-        Err(e) => {
-            eprintln!("Error connecting: {}", e);
-            false
-        },
     }
 }

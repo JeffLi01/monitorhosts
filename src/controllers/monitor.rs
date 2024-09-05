@@ -8,73 +8,77 @@ use log::trace;
 use slint::*;
 
 pub struct Monitor {
-    timer: Timer,
-    thread: JoinHandle<()>,
+    threads: Vec<JoinHandle<()>>,
     terminate_flag: Arc<AtomicBool>,
 }
 
 impl Monitor {
     pub fn new(manager: Arc<RwLock<Manager>>, window: &MainWindow) -> Self {
         let terminate_flag = Arc::new(AtomicBool::new(false));
-        let snapshot: Arc<RwLock<Option<Snapshot>>> = Arc::new(RwLock::new(None));
+        let mut threads = Vec::new();
 
-        let update_timer = Timer::default();
-        let snapshot_clone = snapshot.clone();
-        update_timer.start(
-            slint::TimerMode::Repeated,
-            std::time::Duration::from_secs(1),
-            {
-                let weak_window = window.as_weak();
-    
-                move || {
-                    let window = weak_window.clone();
-                    update(window, snapshot_clone.clone());
-                }
-            },
-        );
+        let window_weak = window.as_weak();
 
         let flag = terminate_flag.clone();
-        let handle = thread::spawn(move || {
+        let mgr = manager.clone();
+        threads.push(thread::spawn(move || {
             loop {
                 if flag.load(Ordering::Relaxed) {
                     break;
                 }
-                trace!("calling manager::check...");
-                let s = manager.read().unwrap().check();
-                trace!("calling manager::check...done");
-                snapshot.write().unwrap().replace(s);
+                if mgr.read().unwrap().updated() {
+                    update(window_weak.clone(), mgr.clone());
+                }
+            }
+        }));
+
+        let flag = terminate_flag.clone();
+        let mgr = manager.clone();
+        threads.push(thread::spawn(move || {
+            loop {
+                if flag.load(Ordering::Relaxed) {
+                    break;
+                }
+                let hosts = mgr.read().unwrap().hosts.clone();
+                hosts.iter()
+                    .for_each(|config| {
+                        config.ports.iter()
+                            .for_each(|(port, enabled)| {
+                                if *enabled {
+                                    let alive = ping(&config.name, port.u16());
+                                    mgr.write().unwrap().update(config.name.to_owned(), port.to_owned(), alive);
+                                }
+                            });
+                    });
+
                 thread::sleep(Duration::from_secs(10));
             }
-        });
+        }));
     
         Self {
-            timer: update_timer,
-            thread: handle,
+            threads,
             terminate_flag,
         }
     }
 
     pub fn join(self) {
         trace!("wating monitor to terminate...");
-        self.timer.stop();
         self.terminate_flag.store(true, Ordering::Relaxed);
-        self.thread.join().unwrap();
+        self.threads.into_iter()
+            .for_each(|thread| thread.join().unwrap());
         trace!("wating monitor to terminate...done");
     }
 }
 
-fn update(window: Weak<MainWindow>, snapshot: Arc<RwLock<Option<Snapshot>>>) {
-    dbg!(&snapshot);
+fn update(window: Weak<MainWindow>, manager: Arc<RwLock<Manager>>) {
+    let snapshot = manager.write().unwrap().capture();
     window
         .upgrade_in_event_loop(move |window| {
-            if snapshot.read().unwrap().is_some() {
-                trace!("updating MainWindowAdapter...");
-                let s = snapshot.read().unwrap().as_ref().unwrap().to_owned();
-                let model = HostsStatusModel::from(s).to_tree_view_model();
-                let adapter = window.global::<MainWindowAdapter>();
-                adapter.set_model(model);
-                trace!("updating MainWindowAdapter...done");
-            }
+            trace!("updating MainWindowAdapter...");
+            let model = HostsStatusModel::from(snapshot).to_tree_view_model();
+            let adapter = window.global::<MainWindowAdapter>();
+            adapter.set_model(model);
+            trace!("updating MainWindowAdapter...done");
         })
         .unwrap();
 }
@@ -133,5 +137,17 @@ impl From<Snapshot> for HostsStatusModel {
         HostsStatusModel {
             hosts,
         }
+    }
+}
+
+use std::net::{TcpStream, SocketAddr};
+fn ping<S: std::fmt::Display>(name: S, port: u16) -> bool {
+    let addr: SocketAddr = std::format!("{name}:{port}").parse().expect("Invalid address");
+    match TcpStream::connect_timeout(&addr, Duration::from_secs(1)) {
+        Ok(_) => true,
+        Err(e) => {
+            eprintln!("Error connecting: {}", e);
+            false
+        },
     }
 }
