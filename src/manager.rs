@@ -44,6 +44,12 @@ impl Manager {
         self.updated = true;
     }
 
+    pub fn clear_host(&mut self) {
+        trace!("clearing hosts from manager...");
+        self.hosts.clear();
+        self.updated = true;
+    }
+
     pub fn update(&mut self, name: String, port: Port, online: bool) {
         self.status.entry((name, port))
             .and_modify(|value| {
