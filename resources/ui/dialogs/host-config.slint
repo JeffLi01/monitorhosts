@@ -9,10 +9,12 @@ export struct HostConfigModel {
     ipmi: bool,
 }
 
-export component AddDialog inherits Dialog {
-    title: "添加";
+export component HostConfigDialog inherits Dialog {
+    title: dialog-title;
     forward-focus: input;
 
+    in property <string> dialog-title: "主机配置";
+    in property <HostConfigModel> input-model;
     in-out property <HostConfigModel> model: {
         name: input.text,
         http: i-http.checked,
@@ -30,6 +32,7 @@ export component AddDialog inherits Dialog {
 
             input := LineEdit {
                 placeholder-text: "IP";
+                text: root.input-model.name;
             }
         }
         GroupBox {
@@ -37,23 +40,23 @@ export component AddDialog inherits Dialog {
             GridBox {
                 Row {
                     Text { vertical-alignment: center; text: "HTTP"; }
-                    i-http := CheckBox {}
+                    i-http := CheckBox { checked: root.input-model.http; }
                 }
                 Row {
                     Text { vertical-alignment: center; text: "HTTPS"; }
-                    i-https := CheckBox {}
+                    i-https := CheckBox { checked: root.input-model.https; }
                 }
                 Row {
                     Text { vertical-alignment: center; text: "SSH"; }
-                    i-ssh := CheckBox {}
+                    i-ssh := CheckBox { checked: root.input-model.ssh; }
                 }
                 Row {
                     Text { vertical-alignment: center; text: "VNC"; }
-                    i-vnc := CheckBox {}
+                    i-vnc := CheckBox { checked: root.input-model.vnc; }
                 }
                 Row {
                     Text { vertical-alignment: center; text: "IPMI"; }
-                    i-ipmi := CheckBox {}
+                    i-ipmi := CheckBox { checked: root.input-model.ipmi; }
                 }
             }
         }

@@ -7,8 +7,8 @@ use crate::{
     manager::{HostConfig, Manager, Port}, ui::{ConfirmDialog, AddDialog}
 };
 
-pub fn add_dialog(mgr: Arc<RwLock<Manager>>) -> AddDialog {
-    let dialog = AddDialog::new().unwrap();
+pub fn add_dialog(mgr: Arc<RwLock<Manager>>) -> HostConfigDialog {
+    let dialog = HostConfigDialog::new().unwrap();
     let dialog_weak = dialog.as_weak();
     let dialog_clone = dialog_weak.clone();
     let mgr = mgr.clone();
