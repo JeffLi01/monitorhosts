@@ -18,9 +18,18 @@ pub fn setup(mgr: Arc<RwLock<Manager>>) -> MainWindow {
         .collect();
     window.global::<MainWindowAdapter>().set_titles(ModelRc::new(VecModel::from(titles)));
 
+    let manager = mgr.clone();
     window.on_add_host(move || {
-        let dialog = super::dialog::add_dialog(mgr.clone());
+        let dialog = super::dialog::add_dialog(manager.clone());
         dialog.show().unwrap();
+    });
+
+    let manager = mgr.clone();
+    window.on_remove_host(move |index| {
+        if index >= 0 {
+            let dialog = super::dialog::remove_dialog(manager.clone(), index as usize);
+            dialog.show().unwrap();
+        }
     });
 
     window

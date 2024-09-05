@@ -41,7 +41,7 @@ impl Monitor {
                 }
                 let hosts = mgr.read().unwrap().hosts.clone();
                 hosts.iter()
-                    .for_each(|(_, config)| {
+                    .for_each(|config| {
                         config.ports.iter()
                             .for_each(|(port, enabled)| {
                                 if *enabled {

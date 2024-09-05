@@ -1,0 +1,26 @@
+import { StandardButton, LineEdit, GridBox, CheckBox, GroupBox, VerticalBox } from "std-widgets.slint";
+
+export component ConfirmDialog inherits Dialog {
+    title: dialog-title;
+
+    in property <string> dialog-title: "确认";
+    in property <string> confirm-message: "确定？";
+    callback action-ok();
+    callback action-cancel();
+
+    GroupBox {
+        Text { vertical-alignment: center; text: root.confirm-message; }
+    }
+    StandardButton {
+        kind: ok;
+        clicked => {
+            root.action-ok();
+        }
+    }
+    StandardButton {
+        kind: cancel;
+        clicked => {
+            root.action-cancel();
+        }
+    }
+}

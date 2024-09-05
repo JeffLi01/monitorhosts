@@ -4,7 +4,7 @@ use log::{trace, warn};
 use slint::*;
 
 use crate::{
-    manager::{HostConfig, Manager, Port}, ui::AddDialog
+    manager::{HostConfig, Manager, Port}, ui::{ConfirmDialog, AddDialog}
 };
 
 pub fn add_dialog(mgr: Arc<RwLock<Manager>>) -> AddDialog {
@@ -33,6 +33,28 @@ pub fn add_dialog(mgr: Arc<RwLock<Manager>>) -> AddDialog {
     let dialog_clone = dialog_weak.clone();
     dialog.on_action_cancel(move || {
         trace!("add-dialog::on_action_cancel");
+        dialog_clone.unwrap().hide().unwrap();
+    });
+    dialog
+}
+
+pub fn remove_dialog(mgr: Arc<RwLock<Manager>>, index: usize) -> ConfirmDialog {
+    let m = mgr.read().unwrap();
+    let host = m.get_host(index).expect("the index {index} should be valid");
+    let dialog = ConfirmDialog::new().unwrap();
+    dialog.set_dialog_title("删除".into());
+    dialog.set_confirm_message(slint::format!("确定要删除 '{}'?", host.name));
+    let dialog_weak = dialog.as_weak();
+    let dialog_clone = dialog_weak.clone();
+    let mgr = mgr.clone();
+    dialog.on_action_ok(move || {
+        trace!("remove-dialog::on_action_ok");
+        mgr.write().unwrap().remove_host(index);
+        dialog_clone.unwrap().hide().unwrap();
+    });
+    let dialog_clone = dialog_weak.clone();
+    dialog.on_action_cancel(move || {
+        trace!("remove-dialog::on_action_cancel");
         dialog_clone.unwrap().hide().unwrap();
     });
     dialog

@@ -34,6 +34,16 @@ impl Manager {
         self.updated = true;
     }
 
+    pub fn get_host(&self, index: usize) -> Option<&HostConfig> {
+        self.hosts.get(index)
+    }
+
+    pub fn remove_host(&mut self, index: usize) {
+        trace!("removing host from manager...");
+        self.hosts.remove(index);
+        self.updated = true;
+    }
+
     pub fn update(&mut self, name: String, port: Port, online: bool) {
         self.status.entry((name, port))
             .and_modify(|value| {
