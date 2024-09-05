@@ -3,6 +3,7 @@ use std::sync::mpsc::{self, Receiver};
 use std::sync::Arc;
 use std::thread;
 
+use log::{trace, warn};
 use tray_item::{IconSource, TrayItem};
 
 pub struct Tray {
@@ -54,18 +55,17 @@ impl Tray {
             loop {
                 match rx_inner.recv() {
                     Ok(Message::Quit) => {
-                        println!("Quit");
-                        let shown = shown_flag.load(Ordering::Relaxed);
-                        println!("shown: {}", shown);
+                        warn!("terminating...");
                         tx.send(Message::Quit).unwrap();
                         break;
                     }
                     Ok(Message::ShowMainWindow) => {
-                        println!("MainWindow");
+                        trace!("show main window...");
                         let shown = shown_flag.load(Ordering::Relaxed);
-                        println!("shown: {}", shown);
                         if !shown {
                             tx.send(Message::ShowMainWindow).unwrap();
+                        } else {
+                            trace!("main window is already shown");
                         }
                     }
                     Ok(msg) => {
@@ -82,7 +82,9 @@ impl Tray {
     }
 
     pub fn join(self) {
+        trace!("wating tray to terminate...");
         self.thread.join().unwrap();
+        trace!("wating tray to terminate...done");
     }
 }
 

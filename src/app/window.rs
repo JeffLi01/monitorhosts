@@ -20,7 +20,7 @@ pub fn setup(mgr: Arc<RwLock<Manager>>) -> MainWindow {
 
     window.on_add_host(move |id| {
         println!("{id}");
-        let dialog = super::dialog::setup(mgr.clone());
+        let dialog = super::dialog::add_dialog(mgr.clone());
         dialog.show().unwrap();
     });
 

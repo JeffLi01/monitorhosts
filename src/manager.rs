@@ -1,5 +1,7 @@
 use std::{collections::{BTreeMap, HashMap}, fmt::Display, hash::Hash, time::Duration};
 
+use log::trace;
+
 pub struct Manager {
     hosts: Vec<HostConfig>,
 }
@@ -10,6 +12,7 @@ impl Manager {
     }
 
     pub fn insert_host(&mut self, host: HostConfig) {
+        trace!("inserting host to manager...");
         self.hosts.push(host);
     }
 

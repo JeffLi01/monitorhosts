@@ -4,6 +4,7 @@ use crate::{
     manager::{Manager, Snapshot},
     ui::*,
 };
+use log::trace;
 use slint::*;
 
 pub struct Monitor {
@@ -38,7 +39,9 @@ impl Monitor {
                 if flag.load(Ordering::Relaxed) {
                     break;
                 }
+                trace!("calling manager::check...");
                 let s = manager.read().unwrap().check();
+                trace!("calling manager::check...done");
                 snapshot.write().unwrap().replace(s);
                 thread::sleep(Duration::from_secs(10));
             }
@@ -52,9 +55,11 @@ impl Monitor {
     }
 
     pub fn join(self) {
+        trace!("wating monitor to terminate...");
         self.timer.stop();
         self.terminate_flag.store(true, Ordering::Relaxed);
         self.thread.join().unwrap();
+        trace!("wating monitor to terminate...done");
     }
 }
 
@@ -62,12 +67,13 @@ fn update(window: Weak<MainWindow>, snapshot: Arc<RwLock<Option<Snapshot>>>) {
     dbg!(&snapshot);
     window
         .upgrade_in_event_loop(move |window| {
-            println!("upgrade_in_event_loop");
             if snapshot.read().unwrap().is_some() {
+                trace!("updating MainWindowAdapter...");
                 let s = snapshot.read().unwrap().as_ref().unwrap().to_owned();
                 let model = HostsStatusModel::from(s).to_tree_view_model();
                 let adapter = window.global::<MainWindowAdapter>();
                 adapter.set_model(model);
+                trace!("updating MainWindowAdapter...done");
             }
         })
         .unwrap();
