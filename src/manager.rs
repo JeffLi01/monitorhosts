@@ -21,15 +21,31 @@ impl Manager {
         self.updated
     }
 
-    pub fn insert_host(&mut self, host: HostConfig) {
+    pub fn contains_host(&self, name: &str) -> bool {
+        self.hosts
+            .iter()
+            .find(|host| host.name == name)
+            .is_some()
+    }
+
+    pub fn add_host(&mut self, host: HostConfig) {
         trace!("inserting host to manager...");
         self.hosts.push(host);
         self.updated = true;
     }
 
     pub fn update(&mut self, name: String, port: Port, online: bool) {
-        self.status.insert((name, port), online);
-        self.updated = true;
+        self.status.entry((name, port))
+            .and_modify(|value| {
+                if *value != online {
+                    *value = online;
+                    self.updated = true;
+                }
+            })
+            .or_insert_with(|| {
+                self.updated = true;
+                online
+            });
     }
 
     pub fn capture(&mut self) -> Snapshot {
@@ -40,7 +56,7 @@ impl Manager {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash)]
 pub struct HostConfig {
     pub name: String,
     pub ports: BTreeMap<Port, bool>,

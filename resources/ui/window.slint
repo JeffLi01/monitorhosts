@@ -17,7 +17,7 @@ export component MainWindow inherits Window {
 
     in property <[string]> titles <=> MainWindowAdapter.titles;
     in property <[[StandardListViewItem]]> model <=> MainWindowAdapter.model;
-    callback add-host(int);
+    callback add-host();
     callback remove-host(int);
     callback config-host(int);
     callback clear-hosts();
@@ -29,7 +29,7 @@ export component MainWindow inherits Window {
             Button {
                 text: "添加";
                 horizontal-stretch: 0;
-                clicked => { root.add-host(i-table-view.current-row); }
+                clicked => { root.add-host(); }
             }
             Button {
                 text: "删除";
