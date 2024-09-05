@@ -74,7 +74,7 @@ impl Port {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Snapshot {
     pub configs: Vec<HostConfig>,
     pub status: HashMap<(String, Port), bool>,

@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::{sync::{atomic::{AtomicBool, Ordering}, Arc, RwLock}, thread::{self, JoinHandle}, time::Duration};
 
 use crate::{
     manager::{Manager, Snapshot},
@@ -6,32 +6,69 @@ use crate::{
 };
 use slint::*;
 
-pub fn setup(manager: Arc<RwLock<Manager>>, window: &MainWindow) -> Timer {
-    let update_timer = Timer::default();
-    update_timer.start(
-        slint::TimerMode::Repeated,
-        std::time::Duration::from_secs(10),
-        {
-            let weak_window = window.as_weak();
-
-            move || {
-                let window = weak_window.clone();
-                update(manager.clone(), window);
-            }
-        },
-    );
-
-    update_timer
+pub struct Monitor {
+    timer: Timer,
+    thread: JoinHandle<()>,
+    terminate_flag: Arc<AtomicBool>,
 }
 
-fn update(manager: Arc<RwLock<Manager>>, window: Weak<MainWindow>) {
-    let snapshot = manager.read().unwrap().check();
+impl Monitor {
+    pub fn new(manager: Arc<RwLock<Manager>>, window: &MainWindow) -> Self {
+        let terminate_flag = Arc::new(AtomicBool::new(false));
+        let snapshot: Arc<RwLock<Option<Snapshot>>> = Arc::new(RwLock::new(None));
+
+        let update_timer = Timer::default();
+        let snapshot_clone = snapshot.clone();
+        update_timer.start(
+            slint::TimerMode::Repeated,
+            std::time::Duration::from_secs(1),
+            {
+                let weak_window = window.as_weak();
+    
+                move || {
+                    let window = weak_window.clone();
+                    update(window, snapshot_clone.clone());
+                }
+            },
+        );
+
+        let flag = terminate_flag.clone();
+        let handle = thread::spawn(move || {
+            loop {
+                if flag.load(Ordering::Relaxed) {
+                    break;
+                }
+                let s = manager.read().unwrap().check();
+                snapshot.write().unwrap().replace(s);
+                thread::sleep(Duration::from_secs(10));
+            }
+        });
+    
+        Self {
+            timer: update_timer,
+            thread: handle,
+            terminate_flag,
+        }
+    }
+
+    pub fn join(self) {
+        self.timer.stop();
+        self.terminate_flag.store(true, Ordering::Relaxed);
+        self.thread.join().unwrap();
+    }
+}
+
+fn update(window: Weak<MainWindow>, snapshot: Arc<RwLock<Option<Snapshot>>>) {
     dbg!(&snapshot);
     window
         .upgrade_in_event_loop(move |window| {
             println!("upgrade_in_event_loop");
-            let adapter = window.global::<MainWindowAdapter>();
-            adapter.set_model(HostsStatusModel::from(snapshot).to_tree_view_model());
+            if snapshot.read().unwrap().is_some() {
+                let s = snapshot.read().unwrap().as_ref().unwrap().to_owned();
+                let model = HostsStatusModel::from(s).to_tree_view_model();
+                let adapter = window.global::<MainWindowAdapter>();
+                adapter.set_model(model);
+            }
         })
         .unwrap();
 }

@@ -8,7 +8,7 @@ use slint::*;
 mod dialog;
 mod window;
 
-use crate::{controllers::monitor, manager::Port};
+use crate::{controllers::monitor::Monitor, manager::Port};
 use crate::{
     manager::Manager,
     tray::{Message, Tray},
@@ -40,7 +40,7 @@ impl Application {
     }
 
     pub fn run(self) {
-        let _timer = monitor::setup(self.manager.clone(), &self.window);
+        let monitor = Monitor::new(self.manager.clone(), &self.window);
         loop {
             match self.tray.msg_channel.recv() {
                 Ok(Message::Quit) => {
@@ -61,5 +61,6 @@ impl Application {
             }
         }
         self.tray.join();
+        monitor.join();
     }
 }
