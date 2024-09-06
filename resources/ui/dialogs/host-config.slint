@@ -27,6 +27,10 @@ export component HostConfigDialog inherits Dialog {
     callback action-ok(HostConfigModel);
     callback action-cancel();
 
+    function update_i_all_status() {
+        i-all.checked = i-http.checked && i-https.checked && i-ssh.checked && i-vnc.checked && i-ipmi.checked;
+    }
+
     VerticalBox {
         GroupBox {
             title: "要监控的IP";
@@ -42,10 +46,29 @@ export component HostConfigDialog inherits Dialog {
                 Row {
                     Text {
                         vertical-alignment: center;
+                        text: "全部";
+                    }
+                    i-all := CheckBox {
+                        checked: i-http.checked && i-https.checked && i-ssh.checked && i-vnc.checked && i-ipmi.checked;
+                        toggled => {
+                            i-http.checked = i-all.checked;
+                            i-https.checked = i-all.checked;
+                            i-ssh.checked = i-all.checked;
+                            i-vnc.checked = i-all.checked;
+                            i-ipmi.checked = i-all.checked;
+                        }
+                    }
+                }
+                Row {
+                    Text {
+                        vertical-alignment: center;
                         text: "HTTP";
                     }
                     i-http := CheckBox {
                         checked: root.input-model.http;
+                        toggled => {
+                            root.update_i_all_status();
+                        }
                     }
                 }
                 Row {
@@ -55,6 +78,9 @@ export component HostConfigDialog inherits Dialog {
                     }
                     i-https := CheckBox {
                         checked: root.input-model.https;
+                        toggled => {
+                            root.update_i_all_status();
+                        }
                     }
                 }
                 Row {
@@ -64,6 +90,9 @@ export component HostConfigDialog inherits Dialog {
                     }
                     i-ssh := CheckBox {
                         checked: root.input-model.ssh;
+                        toggled => {
+                            root.update_i_all_status();
+                        }
                     }
                 }
                 Row {
@@ -73,6 +102,9 @@ export component HostConfigDialog inherits Dialog {
                     }
                     i-vnc := CheckBox {
                         checked: root.input-model.vnc;
+                        toggled => {
+                            root.update_i_all_status();
+                        }
                     }
                 }
                 Row {
@@ -82,6 +114,9 @@ export component HostConfigDialog inherits Dialog {
                     }
                     i-ipmi := CheckBox {
                         checked: root.input-model.ipmi;
+                        toggled => {
+                            root.update_i_all_status();
+                        }
                     }
                 }
             }
