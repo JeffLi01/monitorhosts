@@ -44,7 +44,7 @@ export component MainWindow inherits Window {
                 enabled: (i-table-view.current-row >= 0) && (i-table-view.current-row < i-table-view.rows.length);
             }
             Button {
-                text: "清除";
+                text: "清空";
                 horizontal-stretch: 0;
                 clicked => { root.clear-hosts(); }
                 enabled: i-table-view.rows.length > 0;

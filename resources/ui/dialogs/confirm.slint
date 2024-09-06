@@ -2,6 +2,7 @@ import { StandardButton, LineEdit, GridBox, CheckBox, GroupBox, VerticalBox } fr
 
 export component ConfirmDialog inherits Dialog {
     title: dialog-title;
+    min-width: 360px;
 
     in property <string> dialog-title: "确认";
     in property <string> confirm-message: "确定？";
@@ -9,7 +10,11 @@ export component ConfirmDialog inherits Dialog {
     callback action-cancel();
 
     GroupBox {
-        Text { vertical-alignment: center; text: root.confirm-message; }
+        Text {
+            horizontal-alignment: center;
+            vertical-alignment: center;
+            text: root.confirm-message;
+        }
     }
     StandardButton {
         kind: ok;

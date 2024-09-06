@@ -12,6 +12,7 @@ export struct HostConfigModel {
 export component HostConfigDialog inherits Dialog {
     title: dialog-title;
     forward-focus: input;
+    min-width: 360px;
 
     in property <string> dialog-title: "主机配置";
     in property <HostConfigModel> input-model;

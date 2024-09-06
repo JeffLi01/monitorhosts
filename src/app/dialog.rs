@@ -117,8 +117,8 @@ pub fn remove_dialog(mgr: Arc<RwLock<Manager>>, index: usize) -> ConfirmDialog {
 
 pub fn clear_dialog(mgr: Arc<RwLock<Manager>>) -> ConfirmDialog {
     let dialog = ConfirmDialog::new().unwrap();
-    dialog.set_dialog_title("清除".into());
-    dialog.set_confirm_message("确定要清楚所有主机么？".into());
+    dialog.set_dialog_title("清空".into());
+    dialog.set_confirm_message("确定要清空所有主机么？".into());
     let dialog_weak = dialog.as_weak();
     let dialog_clone = dialog_weak.clone();
     let mgr = mgr.clone();
