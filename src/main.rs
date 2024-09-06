@@ -7,6 +7,7 @@ mod args;
 mod controllers {
     pub mod monitor;
 }
+mod hotkey;
 mod logging;
 mod manager;
 mod tray;

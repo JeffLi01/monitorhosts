@@ -1,4 +1,4 @@
-use std::{sync::{Arc, RwLock}, thread};
+use std::sync::{Arc, RwLock};
 
 use slint::*;
 

@@ -90,6 +90,16 @@ impl HostConfig {
     pub fn new(name: String, ports: BTreeMap<Port, bool>) -> Self {
         Self { name, ports }
     }
+
+    pub fn with_all_enable(name: String) -> Self {
+        let mut ports = BTreeMap::new();
+        ports.insert(Port::Http, true);
+        ports.insert(Port::Https, true);
+        ports.insert(Port::Ssh, true);
+        ports.insert(Port::Vnc, true);
+        ports.insert(Port::Ipmi, true);
+        Self { name, ports }
+    }
 }
 
 #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
