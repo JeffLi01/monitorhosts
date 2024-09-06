@@ -1,19 +1,19 @@
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::{self, Receiver};
-use std::sync::Arc;
+use std::sync::mpsc;
 use std::thread;
 
 use log::{trace, warn};
+use slint::ComponentHandle;
 use tray_item::{IconSource, TrayItem};
 
+use crate::ui::MainWindow;
+
 pub struct Tray {
-    pub msg_channel: Receiver<Message>,
     pub thread: std::thread::JoinHandle<()>,
 }
 
 impl Tray {
-    pub fn new(shown_flag: Arc<AtomicBool>) -> Self {
-        let (tx, msg_channel) = mpsc::sync_channel(1);
+    pub fn new(window: &MainWindow) -> Self {
+        let window_weak = window.as_weak();
 
         let thread = thread::spawn(move || {
             let mut tray =
@@ -24,21 +24,21 @@ impl Tray {
 
             tray.inner_mut().add_separator().unwrap();
 
-            let (tx_inner, rx_inner) = mpsc::sync_channel(1);
+            let (tx, rx) = mpsc::sync_channel(1);
 
-            let tx_clone = tx_inner.clone();
+            let tx_clone = tx.clone();
             tray.add_menu_item("主界面", move || {
                 tx_clone.send(Message::ShowMainWindow).unwrap();
             })
             .unwrap();
 
-            let tx_clone = tx_inner.clone();
+            let tx_clone = tx.clone();
             tray.add_menu_item("配置", move || {
                 tx_clone.send(Message::Config).unwrap();
             })
             .unwrap();
 
-            let tx_clone = tx_inner.clone();
+            let tx_clone = tx.clone();
             tray.add_menu_item("关于", move || {
                 tx_clone.send(Message::About).unwrap();
             })
@@ -46,37 +46,39 @@ impl Tray {
 
             tray.inner_mut().add_separator().unwrap();
 
-            let tx_clone = tx_inner.clone();
+            let tx_clone = tx.clone();
             tray.add_menu_item("退出", move || {
                 tx_clone.send(Message::Quit).unwrap();
             })
             .unwrap();
 
             loop {
-                match rx_inner.recv() {
+                match rx.recv() {
                     Ok(Message::Quit) => {
                         warn!("terminating...");
-                        tx.send(Message::Quit).unwrap();
+                        slint::quit_event_loop().unwrap();
                         break;
                     }
                     Ok(Message::ShowMainWindow) => {
                         trace!("show main window...");
-                        let shown = shown_flag.load(Ordering::Relaxed);
-                        if !shown {
-                            tx.send(Message::ShowMainWindow).unwrap();
-                        } else {
-                            trace!("main window is already shown");
-                        }
+                        window_weak.upgrade_in_event_loop(|window| {
+                            trace!("before showing main window");
+                            window.show().unwrap();
+                            trace!("after showing main window");
+                        })
+                        .unwrap();
                     }
-                    Ok(msg) => {
-                        tx.send(msg).unwrap();
+                    Ok(Message::Config) => {
+                        println!("Config");
+                    }
+                    Ok(Message::About) => {
+                        println!("About");
                     }
                     Err(err) => eprintln!("{}", err),
                 }
             }
         });
         Self {
-            msg_channel,
             thread,
         }
     }
