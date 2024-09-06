@@ -40,24 +40,49 @@ export component HostConfigDialog inherits Dialog {
             title: "服务列表";
             GridBox {
                 Row {
-                    Text { vertical-alignment: center; text: "HTTP"; }
-                    i-http := CheckBox { checked: root.input-model.http; }
+                    Text {
+                        vertical-alignment: center;
+                        text: "HTTP";
+                    }
+                    i-http := CheckBox {
+                        checked: root.input-model.http;
+                    }
                 }
                 Row {
-                    Text { vertical-alignment: center; text: "HTTPS"; }
-                    i-https := CheckBox { checked: root.input-model.https; }
+                    Text {
+                        vertical-alignment: center;
+                        text: "HTTPS";
+                    }
+                    i-https := CheckBox {
+                        checked: root.input-model.https;
+                    }
                 }
                 Row {
-                    Text { vertical-alignment: center; text: "SSH"; }
-                    i-ssh := CheckBox { checked: root.input-model.ssh; }
+                    Text {
+                        vertical-alignment: center;
+                        text: "SSH";
+                    }
+                    i-ssh := CheckBox {
+                        checked: root.input-model.ssh;
+                    }
                 }
                 Row {
-                    Text { vertical-alignment: center; text: "VNC"; }
-                    i-vnc := CheckBox { checked: root.input-model.vnc; }
+                    Text {
+                        vertical-alignment: center;
+                        text: "VNC";
+                    }
+                    i-vnc := CheckBox {
+                        checked: root.input-model.vnc;
+                    }
                 }
                 Row {
-                    Text { vertical-alignment: center; text: "IPMI"; }
-                    i-ipmi := CheckBox { checked: root.input-model.ipmi; }
+                    Text {
+                        vertical-alignment: center;
+                        text: "IPMI";
+                    }
+                    i-ipmi := CheckBox {
+                        checked: root.input-model.ipmi;
+                    }
                 }
             }
         }
