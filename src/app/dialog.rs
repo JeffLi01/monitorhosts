@@ -66,21 +66,17 @@ pub fn config_dialog(mgr: Arc<RwLock<Manager>>, index: usize) -> HostConfigDialo
     dialog.on_action_ok(move |host| {
         trace!("config-dialog::on_action_ok: {host:?}");
         let name = host.name.to_string();
-        if mgr.read().unwrap().contains_host(&name) {
-            let mut ports = BTreeMap::new();
-            ports.insert(Port::Http, host.http);
-            ports.insert(Port::Https, host.https);
-            ports.insert(Port::Ssh, host.ssh);
-            ports.insert(Port::Vnc, host.vnc);
-            ports.insert(Port::Ipmi, host.ipmi);
-            trace!("calling hmanager::update_host...");
-            mgr.write()
-                .unwrap()
-                .update_host(index, HostConfig::new(name, ports));
-            trace!("calling hmanager::update_host done");
-        } else {
-            warn!("host with name {name} does not exist");
-        }
+        let mut ports = BTreeMap::new();
+        ports.insert(Port::Http, host.http);
+        ports.insert(Port::Https, host.https);
+        ports.insert(Port::Ssh, host.ssh);
+        ports.insert(Port::Vnc, host.vnc);
+        ports.insert(Port::Ipmi, host.ipmi);
+        trace!("calling hmanager::update_host...");
+        mgr.write()
+            .unwrap()
+            .update_host(index, HostConfig::new(name, ports));
+        trace!("calling hmanager::update_host done");
         dialog_clone.unwrap().hide().unwrap();
     });
     let dialog_clone = dialog_weak.clone();
