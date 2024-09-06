@@ -1,4 +1,11 @@
-use std::{sync::{atomic::{AtomicBool, Ordering}, Arc, RwLock}, thread::{self, JoinHandle}, time::Duration};
+use std::{
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, RwLock,
+    },
+    thread::{self, JoinHandle},
+    time::Duration,
+};
 
 use crate::{
     manager::{Manager, Snapshot},
@@ -21,40 +28,36 @@ impl Monitor {
 
         let flag = terminate_flag.clone();
         let mgr = manager.clone();
-        threads.push(thread::spawn(move || {
-            loop {
-                if flag.load(Ordering::Relaxed) {
-                    break;
-                }
-                if mgr.read().unwrap().updated() {
-                    update(window_weak.clone(), mgr.clone());
-                }
+        threads.push(thread::spawn(move || loop {
+            if flag.load(Ordering::Relaxed) {
+                break;
+            }
+            if mgr.read().unwrap().updated() {
+                update(window_weak.clone(), mgr.clone());
             }
         }));
 
         let flag = terminate_flag.clone();
         let mgr = manager.clone();
-        threads.push(thread::spawn(move || {
-            loop {
-                if flag.load(Ordering::Relaxed) {
-                    break;
-                }
-                let hosts = mgr.read().unwrap().hosts.clone();
-                hosts.iter()
-                    .for_each(|config| {
-                        config.ports.iter()
-                            .for_each(|(port, enabled)| {
-                                if *enabled {
-                                    let alive = ping(&config.name, port.u16());
-                                    mgr.write().unwrap().update(config.name.to_owned(), port.to_owned(), alive);
-                                }
-                            });
-                    });
-
-                thread::sleep(Duration::from_secs(10));
+        threads.push(thread::spawn(move || loop {
+            if flag.load(Ordering::Relaxed) {
+                break;
             }
+            let hosts = mgr.read().unwrap().hosts.clone();
+            hosts.iter().for_each(|config| {
+                config.ports.iter().for_each(|(port, enabled)| {
+                    if *enabled {
+                        let alive = ping(&config.name, port.u16());
+                        mgr.write()
+                            .unwrap()
+                            .update(config.name.to_owned(), port.to_owned(), alive);
+                    }
+                });
+            });
+
+            thread::sleep(Duration::from_secs(10));
         }));
-    
+
         Self {
             threads,
             terminate_flag,
@@ -64,7 +67,8 @@ impl Monitor {
     pub fn join(self) {
         trace!("wating monitor to terminate...");
         self.terminate_flag.store(true, Ordering::Relaxed);
-        self.threads.into_iter()
+        self.threads
+            .into_iter()
             .for_each(|thread| thread.join().unwrap());
         trace!("wating monitor to terminate...done");
     }
@@ -116,38 +120,46 @@ impl From<Snapshot> for HostsStatusModel {
             .map(|config| {
                 let name = config.name.to_owned();
                 let mut attrs = vec![name.clone()];
-                attrs.append(&mut config
-                    .ports
-                    .iter()
-                    .map(|(port, enabled)| {
-                        if *enabled {
-                            match value.status.get(&(name.clone(), *port)) {
-                                Some(online) => if *online { "⬤" } else { "◯" },
-                                None => "NA",
+                attrs.append(
+                    &mut config
+                        .ports
+                        .iter()
+                        .map(|(port, enabled)| {
+                            if *enabled {
+                                match value.status.get(&(name.clone(), *port)) {
+                                    Some(online) => {
+                                        if *online {
+                                            "⬤"
+                                        } else {
+                                            "◯"
+                                        }
+                                    }
+                                    None => "NA",
+                                }
+                            } else {
+                                ""
                             }
-                        } else {
-                            ""
-                        }
-                    })
-                    .map(ToString::to_string)
-                    .collect());
+                        })
+                        .map(ToString::to_string)
+                        .collect(),
+                );
                 attrs
             })
             .collect();
-        HostsStatusModel {
-            hosts,
-        }
+        HostsStatusModel { hosts }
     }
 }
 
-use std::net::{TcpStream, SocketAddr};
+use std::net::{SocketAddr, TcpStream};
 fn ping<S: std::fmt::Display>(name: S, port: u16) -> bool {
-    let addr: SocketAddr = std::format!("{name}:{port}").parse().expect("Invalid address");
+    let addr: SocketAddr = std::format!("{name}:{port}")
+        .parse()
+        .expect("Invalid address");
     match TcpStream::connect_timeout(&addr, Duration::from_secs(1)) {
         Ok(_) => true,
         Err(e) => {
             eprintln!("Error connecting: {}", e);
             false
-        },
+        }
     }
 }

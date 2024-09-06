@@ -1,12 +1,16 @@
-use std::{collections::BTreeMap, sync::{Arc, RwLock}};
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, RwLock},
+};
 
 use log::{trace, warn};
 use slint::*;
 
-use crate::{
-    manager::{HostConfig, Manager, Port}, ui::{ConfirmDialog, HostConfigDialog}
-};
 use crate::ui::HostConfigModel;
+use crate::{
+    manager::{HostConfig, Manager, Port},
+    ui::{ConfirmDialog, HostConfigDialog},
+};
 
 pub fn add_dialog(mgr: Arc<RwLock<Manager>>) -> HostConfigDialog {
     let dialog = HostConfigDialog::new().unwrap();
@@ -41,22 +45,20 @@ pub fn add_dialog(mgr: Arc<RwLock<Manager>>) -> HostConfigDialog {
 
 pub fn config_dialog(mgr: Arc<RwLock<Manager>>, index: usize) -> HostConfigDialog {
     let m = mgr.read().unwrap();
-    let host = m.get_host(index).expect("the index {index} should be valid");
+    let host = m
+        .get_host(index)
+        .expect("the index {index} should be valid");
     let dialog = HostConfigDialog::new().unwrap();
     dialog.set_dialog_title("配置".into());
     let mut model = HostConfigModel::default();
     model.name = SharedString::from(&host.name);
-    host.ports
-        .iter()
-        .for_each(|(port, enabled)| {
-            match port {
-                Port::Http => model.http = *enabled,
-                Port::Https => model.https = *enabled,
-                Port::Ssh => model.ssh = *enabled,
-                Port::Vnc => model.vnc = *enabled,
-                Port::Ipmi => model.ipmi = *enabled,
-            }
-        });
+    host.ports.iter().for_each(|(port, enabled)| match port {
+        Port::Http => model.http = *enabled,
+        Port::Https => model.https = *enabled,
+        Port::Ssh => model.ssh = *enabled,
+        Port::Vnc => model.vnc = *enabled,
+        Port::Ipmi => model.ipmi = *enabled,
+    });
     dialog.set_input_model(model);
     let dialog_weak = dialog.as_weak();
     let dialog_clone = dialog_weak.clone();
@@ -72,7 +74,9 @@ pub fn config_dialog(mgr: Arc<RwLock<Manager>>, index: usize) -> HostConfigDialo
             ports.insert(Port::Vnc, host.vnc);
             ports.insert(Port::Ipmi, host.ipmi);
             trace!("calling hmanager::update_host...");
-            mgr.write().unwrap().update_host(index, HostConfig::new(name, ports));
+            mgr.write()
+                .unwrap()
+                .update_host(index, HostConfig::new(name, ports));
             trace!("calling hmanager::update_host done");
         } else {
             warn!("host with name {name} does not exist");
@@ -89,7 +93,9 @@ pub fn config_dialog(mgr: Arc<RwLock<Manager>>, index: usize) -> HostConfigDialo
 
 pub fn remove_dialog(mgr: Arc<RwLock<Manager>>, index: usize) -> ConfirmDialog {
     let m = mgr.read().unwrap();
-    let host = m.get_host(index).expect("the index {index} should be valid");
+    let host = m
+        .get_host(index)
+        .expect("the index {index} should be valid");
     let dialog = ConfirmDialog::new().unwrap();
     dialog.set_dialog_title("删除".into());
     dialog.set_confirm_message(slint::format!("确定要删除 '{}'?", host.name));

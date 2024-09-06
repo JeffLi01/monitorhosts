@@ -1,4 +1,7 @@
-use std::{collections::{BTreeMap, HashMap}, hash::Hash};
+use std::{
+    collections::{BTreeMap, HashMap},
+    hash::Hash,
+};
 
 use log::trace;
 
@@ -22,10 +25,7 @@ impl Manager {
     }
 
     pub fn contains_host(&self, name: &str) -> bool {
-        self.hosts
-            .iter()
-            .find(|host| host.name == name)
-            .is_some()
+        self.hosts.iter().find(|host| host.name == name).is_some()
     }
 
     pub fn add_host(&mut self, host: HostConfig) {
@@ -58,7 +58,8 @@ impl Manager {
     }
 
     pub fn update(&mut self, name: String, port: Port, online: bool) {
-        self.status.entry((name, port))
+        self.status
+            .entry((name, port))
             .and_modify(|value| {
                 if *value != online {
                     *value = online;
