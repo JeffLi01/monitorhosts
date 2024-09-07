@@ -6,12 +6,13 @@ use std::{
     thread::{self, JoinHandle},
     time::Duration,
 };
+use std::net::TcpStream;
 
 use crate::{
-    manager::{Manager, Snapshot},
+    manager::{Manager, PortStatus, Snapshot},
     ui::*,
 };
-use log::trace;
+use log::{error, trace};
 use slint::*;
 
 pub struct Monitor {
@@ -47,10 +48,10 @@ impl Monitor {
             hosts.iter().for_each(|config| {
                 config.ports.iter().for_each(|(port, enabled)| {
                     if *enabled {
-                        let alive = ping(&config.name, port.u16());
+                        let status = ping(&config.name, port.u16());
                         mgr.write()
                             .unwrap()
-                            .update(config.name.to_owned(), port.to_owned(), alive);
+                            .update(config.name.to_owned(), port.to_owned(), status);
                     }
                 });
             });
@@ -127,20 +128,13 @@ impl From<Snapshot> for HostsStatusModel {
                         .map(|(port, enabled)| {
                             if *enabled {
                                 match value.status.get(&(name.clone(), *port)) {
-                                    Some(online) => {
-                                        if *online {
-                                            "⬤"
-                                        } else {
-                                            "◯"
-                                        }
-                                    }
-                                    None => "NA",
+                                    Some(status) => status.to_string(),
+                                    None => "NA".to_string(),
                                 }
                             } else {
-                                ""
+                                "".to_string()
                             }
                         })
-                        .map(ToString::to_string)
                         .collect(),
                 );
                 attrs
@@ -150,16 +144,21 @@ impl From<Snapshot> for HostsStatusModel {
     }
 }
 
-use std::net::{SocketAddr, TcpStream};
-fn ping<S: std::fmt::Display>(name: S, port: u16) -> bool {
-    let addr: SocketAddr = std::format!("{name}:{port}")
-        .parse()
-        .expect("Invalid address");
-    match TcpStream::connect_timeout(&addr, Duration::from_secs(1)) {
-        Ok(_) => true,
-        Err(e) => {
-            eprintln!("Error connecting: {}", e);
-            false
-        }
+fn ping<S: std::fmt::Display>(name: S, port: u16) -> PortStatus {
+    let host = std::format!("{name}:{port}");
+    match host.parse() {
+        Ok(addr) => {
+            match TcpStream::connect_timeout(&addr, Duration::from_secs(1)) {
+                Ok(_) => PortStatus::On,
+                Err(err) => {
+                    error!("failed to connect '{host}': {err}");
+                    PortStatus::Off
+                }
+            }
+        },
+        Err(err) => {
+            error!("failed to parse host '{host}': {err}");
+            PortStatus::Error
+        },
     }
 }

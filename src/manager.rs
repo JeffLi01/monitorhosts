@@ -7,7 +7,7 @@ use log::trace;
 
 pub struct Manager {
     pub hosts: Vec<HostConfig>,
-    status: HashMap<(String, Port), bool>,
+    status: HashMap<(String, Port), PortStatus>,
     updated: bool,
 }
 
@@ -57,18 +57,18 @@ impl Manager {
         self.updated = true;
     }
 
-    pub fn update(&mut self, name: String, port: Port, online: bool) {
+    pub fn update(&mut self, name: String, port: Port, status: PortStatus) {
         self.status
             .entry((name, port))
             .and_modify(|value| {
-                if *value != online {
-                    *value = online;
+                if *value != status {
+                    *value = status;
                     self.updated = true;
                 }
             })
             .or_insert_with(|| {
                 self.updated = true;
-                online
+                status
             });
     }
 
@@ -134,14 +134,31 @@ impl Port {
     }
 }
 
+#[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum PortStatus {
+    On,
+    Off,
+    Error,
+}
+
+impl std::fmt::Display for PortStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PortStatus::On => write!(f, "⬤"),
+            PortStatus::Off => write!(f, "◯"),
+            PortStatus::Error => write!(f, "✕"),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Snapshot {
     pub configs: Vec<HostConfig>,
-    pub status: HashMap<(String, Port), bool>,
+    pub status: HashMap<(String, Port), PortStatus>,
 }
 
 impl Snapshot {
-    pub fn new(configs: Vec<HostConfig>, status: HashMap<(String, Port), bool>) -> Self {
+    pub fn new(configs: Vec<HostConfig>, status: HashMap<(String, Port), PortStatus>) -> Self {
         Self { configs, status }
     }
 }
