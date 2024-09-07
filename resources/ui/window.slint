@@ -8,6 +8,7 @@ export global MainWindowAdapter {
 export component MainWindow inherits Window {
     default-font-family: "Microsoft YaHei";
     title: "MonitorHosts";
+    icon: @image-url("../icons/monitorhosts.png");
     min-width: 640px;
     min-height: 480px;
     background: white;
@@ -56,6 +57,7 @@ export component MainWindow inherits Window {
         i-table-view := StandardTableView {
             columns: [
                 { title: "主机名", horizontal_stretch: 1, min_width: 256px },
+                { title: "Ping", horizontal_stretch: 0.1, min_width: 64px },
                 { title: "HTTP", horizontal_stretch: 0.1, min_width: 64px },
                 { title: "HTTPS", horizontal_stretch: 0.1, min_width: 64px },
                 { title: "SSH", horizontal_stretch: 0.1, min_width: 64px },
