@@ -5,7 +5,8 @@ use std::time::Duration;
 
 use global_hotkey::HotKeyState;
 use global_hotkey::{hotkey::{Code, HotKey, Modifiers}, GlobalHotKeyEvent, GlobalHotKeyManager};
-use log::{info, trace};
+use log::{error, info, trace, warn};
+use url::Url;
 
 use crate::manager::{HostConfig, Manager};
 
@@ -43,8 +44,15 @@ impl HotkeyWorker {
                         trace!("hotkey({}) {:?}", event.id, event.state);
                         match event.state {
                             HotKeyState::Pressed => {
-                                let name = clipboard.get_text().unwrap();
-                                trace!("Clipboard text was: {name}");
+                                let text = clipboard.get_text().unwrap();
+                                trace!("Clipboard text was: {text}");
+                                let name = match extract(&text) {
+                                    Some(name) => name,
+                                    None => {
+                                        warn!("extract: no valid ip found in {text}");
+                                        continue;
+                                    },
+                                };
                                 let host = HostConfig::with_all_enable(name);
                                 manager.write().unwrap().add_host(host);
                             },
@@ -68,4 +76,16 @@ impl HotkeyWorker {
         self.thread.join().unwrap();
         trace!("wating hotkey worker to terminate...done");
     }
+}
+
+fn extract<S: std::fmt::Display>(text: S) -> Option<String> {
+    let name = format!("{text}");
+    let u = match Url::parse(&name) {
+        Ok(u) => u,
+        Err(err) => {
+            error!("failed to parse url '{name}': {err}");
+            return None;
+        },
+    };
+    u.host_str().map(ToOwned::to_owned)
 }

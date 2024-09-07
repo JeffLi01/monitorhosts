@@ -2739,6 +2739,7 @@ dependencies = [
  "slint",
  "slint-build",
  "tray-item",
+ "url",
 ]
 
 [[package]]

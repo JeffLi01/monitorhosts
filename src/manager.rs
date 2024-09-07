@@ -29,7 +29,7 @@ impl Manager {
     }
 
     pub fn add_host(&mut self, host: HostConfig) {
-        trace!("inserting host to manager...");
+        trace!("inserting host {} to manager...", host.name);
         self.hosts.push(host);
         self.updated = true;
     }

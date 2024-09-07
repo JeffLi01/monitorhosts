@@ -144,20 +144,20 @@ impl From<Snapshot> for HostsStatusModel {
     }
 }
 
-fn ping<S: std::fmt::Display>(name: S, port: u16) -> PortStatus {
-    let host = std::format!("{name}:{port}");
-    match host.parse() {
+fn ping(host: &str, port: u16) -> PortStatus {
+    let target = std::format!("{host}:{port}");
+    match target.parse() {
         Ok(addr) => {
             match TcpStream::connect_timeout(&addr, Duration::from_secs(1)) {
                 Ok(_) => PortStatus::On,
                 Err(err) => {
-                    error!("failed to connect '{host}': {err}");
+                    error!("failed to connect '{target}': {err}");
                     PortStatus::Off
                 }
             }
         },
         Err(err) => {
-            error!("failed to parse host '{host}': {err}");
+            error!("failed to parse host '{target}': {err}");
             PortStatus::Error
         },
     }
