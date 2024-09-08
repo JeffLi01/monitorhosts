@@ -1,9 +1,10 @@
 use std::{
     collections::{BTreeMap, HashMap},
-    hash::Hash,
+    hash::Hash, path::Path,
 };
 
-use log::trace;
+use log::{error, trace, warn};
+use serde::{Deserialize, Serialize};
 
 pub struct Manager {
     pub hosts: Vec<HostConfig>,
@@ -20,6 +21,33 @@ impl Manager {
             status: HashMap::new(),
             updated: false,
         }
+    }
+
+    pub fn with_config(config: &Path) -> Option<Self> {
+        if !config.exists() {
+            warn!("config file '{config:?}' not exists");
+            return None;
+        }
+        let content = match std::fs::read_to_string(&config) {
+            Ok(content) => content,
+            Err(err) => {
+                error!("failed to read file '{config:?}': {err}");
+                return None;
+            },
+        };
+        let hosts: Vec<HostConfig> = match serde_json::from_str(&content) {
+            Ok(hosts) => hosts,
+            Err(err) => {
+                error!("failed deserialize '{config:?}': {err}");
+                return None;
+            },
+        };
+        Some(Self {
+            hosts,
+            liveness: HashMap::new(),
+            status: HashMap::new(),
+            updated: true,
+        })
     }
 
     pub fn updated(&self) -> bool {
@@ -98,7 +126,7 @@ impl Manager {
     }
 }
 
-#[derive(Clone, Debug, Hash)]
+#[derive(Clone, Debug, Deserialize, Hash, Serialize)]
 pub struct HostConfig {
     pub name: String,
     pub ports: BTreeMap<Port, bool>,
@@ -120,7 +148,7 @@ impl HostConfig {
     }
 }
 
-#[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub enum Port {
     Http,
     Https,
