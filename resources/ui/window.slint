@@ -1,7 +1,6 @@
 import { StandardTableView, VerticalBox, HorizontalBox, Button } from "std-widgets.slint";
 
 export global MainWindowAdapter {
-    in property <[string]> titles;
     in property <[[StandardListViewItem]]> model;
 }
 
@@ -16,7 +15,6 @@ export component MainWindow inherits Window {
     preferred-height: 768px;
     padding: 0px;
 
-    in property <[string]> titles <=> MainWindowAdapter.titles;
     in property <[[StandardListViewItem]]> model <=> MainWindowAdapter.model;
     callback add-host();
     callback remove-host(int);

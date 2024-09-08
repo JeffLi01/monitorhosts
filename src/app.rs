@@ -3,14 +3,12 @@ use std::sync::{Arc, RwLock};
 mod dialog;
 mod window;
 
-use crate::{controllers::monitor::Monitor, hotkey::HotkeyWorker, manager::Port};
+use crate::{controllers::monitor::Monitor, hotkey::HotkeyWorker};
 use crate::{
     manager::Manager,
     tray::Tray,
     ui::MainWindow,
 };
-
-const PORTS: [Port; 5] = [Port::Http, Port::Https, Port::Ssh, Port::Vnc, Port::Ipmi];
 
 pub struct Application {
     pub window: MainWindow,

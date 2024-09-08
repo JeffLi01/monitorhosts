@@ -7,6 +7,7 @@ use log::trace;
 
 pub struct Manager {
     pub hosts: Vec<HostConfig>,
+    liveness: HashMap<String, PortStatus>,
     status: HashMap<(String, Port), PortStatus>,
     updated: bool,
 }
@@ -15,6 +16,7 @@ impl Manager {
     pub fn new() -> Self {
         Self {
             hosts: Vec::new(),
+            liveness: HashMap::new(),
             status: HashMap::new(),
             updated: false,
         }
@@ -72,11 +74,27 @@ impl Manager {
             });
     }
 
+    pub fn update_liveness(&mut self, name: String, status: PortStatus) {
+        self.liveness
+            .entry(name)
+            .and_modify(|value| {
+                if *value != status {
+                    *value = status;
+                    self.updated = true;
+                }
+            })
+            .or_insert_with(|| {
+                self.updated = true;
+                status
+            });
+    }
+
     pub fn capture(&mut self) -> Snapshot {
         let configs = self.hosts.clone();
+        let liveness = self.liveness.clone();
         let status = self.status.clone();
         self.updated = false;
-        Snapshot::new(configs, status)
+        Snapshot::new(configs, liveness, status)
     }
 }
 
@@ -98,7 +116,7 @@ impl HostConfig {
         ports.insert(Port::Ssh, true);
         ports.insert(Port::Vnc, true);
         ports.insert(Port::Ipmi, true);
-        Self { name, ports }
+        Self::new(name, ports)
     }
 }
 
@@ -154,11 +172,12 @@ impl std::fmt::Display for PortStatus {
 #[derive(Clone, Debug)]
 pub struct Snapshot {
     pub configs: Vec<HostConfig>,
+    pub liveness: HashMap<String, PortStatus>,
     pub status: HashMap<(String, Port), PortStatus>,
 }
 
 impl Snapshot {
-    pub fn new(configs: Vec<HostConfig>, status: HashMap<(String, Port), PortStatus>) -> Self {
-        Self { configs, status }
+    pub fn new(configs: Vec<HostConfig>, liveness: HashMap<String, PortStatus>, status: HashMap<(String, Port), PortStatus>) -> Self {
+        Self { configs, liveness, status }
     }
 }

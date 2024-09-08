@@ -1,18 +1,19 @@
 use std::{
-    sync::{
+    net::IpAddr, sync::{
         atomic::{AtomicBool, Ordering},
         Arc, RwLock,
-    },
-    thread::{self, JoinHandle},
-    time::Duration,
+    }, thread::{self, JoinHandle}, time::Duration
 };
 use std::net::TcpStream;
+
+use surge_ping::{Client, Config, PingIdentifier, PingSequence, ICMP};
+use tokio::runtime::Runtime;
 
 use crate::{
     manager::{Manager, PortStatus, Snapshot},
     ui::*,
 };
-use log::{error, trace};
+use log::{error, trace, warn};
 use slint::*;
 
 pub struct Monitor {
@@ -48,7 +49,7 @@ impl Monitor {
             hosts.iter().for_each(|config| {
                 config.ports.iter().for_each(|(port, enabled)| {
                     if *enabled {
-                        let status = ping(&config.name, port.u16());
+                        let status = tcping(&config.name, port.u16());
                         mgr.write()
                             .unwrap()
                             .update(config.name.to_owned(), port.to_owned(), status);
@@ -57,6 +58,42 @@ impl Monitor {
             });
 
             thread::sleep(Duration::from_secs(10));
+        }));
+
+        let flag = terminate_flag.clone();
+        let mgr = manager.clone();
+        let rt = Runtime::new().unwrap();
+        threads.push(thread::spawn(move || {
+            rt.block_on(async {
+                let client_v4 = Client::new(&Config::default()).expect("surge-ping Config for IPv4 should be created successfully");
+                let client_v6 = Client::new(&Config::builder().kind(ICMP::V6).build()).expect("surge-ping Config for IPv6 should be created successfully");
+
+                loop {
+                    if flag.load(Ordering::Relaxed) {
+                        break;
+                    }
+                    let hosts = mgr.read().unwrap().hosts.clone();
+                    for config in hosts {
+                        let status = match config.name.parse() {
+                            Ok(IpAddr::V4(addr)) => {
+                                ping(&client_v4, IpAddr::V4(addr)).await
+                            }
+                            Ok(IpAddr::V6(addr)) => {
+                                ping(&client_v6, IpAddr::V6(addr)).await
+                            }
+                            Err(e) => {
+                                error!("{} parse to ipaddr error: {}", config.name, e);
+                                PortStatus::Error
+                            },
+                        };
+                        mgr.write()
+                            .unwrap()
+                            .update_liveness(config.name.to_owned(), status);
+                    }
+
+                    thread::sleep(Duration::from_secs(10));
+                }
+            });
         }));
 
         Self {
@@ -121,6 +158,11 @@ impl From<Snapshot> for HostsStatusModel {
             .map(|config| {
                 let name = config.name.to_owned();
                 let mut attrs = vec![name.clone()];
+                let liveness = match value.liveness.get(&name) {
+                    Some(status) => status.to_string(),
+                    None => "NA".to_string(),
+                };
+                attrs.push(liveness);
                 attrs.append(
                     &mut config
                         .ports
@@ -144,7 +186,7 @@ impl From<Snapshot> for HostsStatusModel {
     }
 }
 
-fn ping(host: &str, port: u16) -> PortStatus {
+fn tcping(host: &str, port: u16) -> PortStatus {
     let target = std::format!("{host}:{port}");
     match target.parse() {
         Ok(addr) => {
@@ -159,6 +201,19 @@ fn ping(host: &str, port: u16) -> PortStatus {
         Err(err) => {
             error!("failed to parse host '{target}': {err}");
             PortStatus::Error
+        },
+    }
+}
+
+async fn ping(client: &Client, addr: IpAddr) -> PortStatus {
+    let payload = [0; 56];
+    let mut pinger = client.pinger(addr, PingIdentifier(rand::random())).await;
+    pinger.timeout(Duration::from_secs(1));
+    match pinger.ping(PingSequence(0), &payload).await {
+        Ok(_) => PortStatus::On,
+        Err(err) => {
+            warn!("ping '{}' error: {}", pinger.host, err);
+            PortStatus::Off
         },
     }
 }
