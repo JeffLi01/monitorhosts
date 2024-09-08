@@ -32,17 +32,17 @@ impl Tray {
             })
             .unwrap();
 
-            let tx_clone = tx.clone();
-            tray.add_menu_item("配置", move || {
-                tx_clone.send(Message::Config).unwrap();
-            })
-            .unwrap();
+            // let tx_clone = tx.clone();
+            // tray.add_menu_item("配置", move || {
+            //     tx_clone.send(Message::Config).unwrap();
+            // })
+            // .unwrap();
 
-            let tx_clone = tx.clone();
-            tray.add_menu_item("关于", move || {
-                tx_clone.send(Message::About).unwrap();
-            })
-            .unwrap();
+            // let tx_clone = tx.clone();
+            // tray.add_menu_item("关于", move || {
+            //     tx_clone.send(Message::About).unwrap();
+            // })
+            // .unwrap();
 
             tray.inner_mut().add_separator().unwrap();
 
@@ -68,12 +68,12 @@ impl Tray {
                         })
                         .unwrap();
                     }
-                    Ok(Message::Config) => {
-                        println!("Config");
-                    }
-                    Ok(Message::About) => {
-                        println!("About");
-                    }
+                    // Ok(Message::Config) => {
+                    //     println!("Config");
+                    // }
+                    // Ok(Message::About) => {
+                    //     println!("About");
+                    // }
                     Err(err) => eprintln!("{}", err),
                 }
             }
@@ -91,8 +91,8 @@ impl Tray {
 }
 
 pub enum Message {
-    About,
-    Config,
+    // About,
+    // Config,
     ShowMainWindow,
     Quit,
 }
