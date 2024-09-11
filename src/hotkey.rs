@@ -44,35 +44,32 @@ impl HotkeyWorker {
             if flag.load(Ordering::Relaxed) {
                 return;
             }
-            match hotkey_channel.recv_timeout(Duration::from_secs(1)) {
-                Ok(event) => {
-                    trace!("hotkey({}) {:?}", event.id, event.state);
-                    match event.state {
-                        HotKeyState::Pressed => {
-                            let text = clipboard.get_text().unwrap();
-                            trace!("Clipboard text was: {text}");
-                            let name = match extract(&text) {
-                                Some(name) => name,
-                                None => {
-                                    warn!("extract: no valid ip found in {text}");
-                                    continue;
-                                }
-                            };
-                            let host = HostConfig::with_all_enable(name.clone());
-                            manager.write().unwrap().add_host(host);
-                            if let Err(err) = Notification::new()
-                                .summary("MonitorHosts")
-                                .body(&format!("添加主机：'{name}'"))
-                                .show()
-                            {
-                                error!("failed to show notification for adding host {name}: {err}");
+            if let Ok(event) = hotkey_channel.recv_timeout(Duration::from_secs(1)) {
+                trace!("hotkey({}) {:?}", event.id, event.state);
+                match event.state {
+                    HotKeyState::Pressed => {
+                        let text = clipboard.get_text().unwrap();
+                        trace!("Clipboard text was: {text}");
+                        let name = match extract(&text) {
+                            Some(name) => name,
+                            None => {
+                                warn!("extract: no valid ip found in {text}");
+                                continue;
                             }
+                        };
+                        let host = HostConfig::with_all_enable(name.clone());
+                        manager.write().unwrap().add_host(host);
+                        if let Err(err) = Notification::new()
+                            .summary("MonitorHosts")
+                            .body(&format!("添加主机：'{name}'"))
+                            .show()
+                        {
+                            error!("failed to show notification for adding host {name}: {err}");
                         }
-                        HotKeyState::Released => {}
                     }
+                    HotKeyState::Released => {}
                 }
-                Err(_) => {}
-            };
+            }
         });
         Self {
             terminate_flag,

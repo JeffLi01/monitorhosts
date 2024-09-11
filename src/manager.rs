@@ -29,7 +29,7 @@ impl Manager {
             warn!("config file '{config:?}' not exists");
             return None;
         }
-        let content = match std::fs::read_to_string(&config) {
+        let content = match std::fs::read_to_string(config) {
             Ok(content) => content,
             Err(err) => {
                 error!("failed to read file '{config:?}': {err}");
@@ -56,7 +56,7 @@ impl Manager {
     }
 
     pub fn contains_host(&self, name: &str) -> bool {
-        self.hosts.iter().find(|host| host.name == name).is_some()
+        self.hosts.iter().any(|host| host.name == name)
     }
 
     pub fn add_host(&mut self, host: HostConfig) {
@@ -159,17 +159,6 @@ pub enum Port {
 }
 
 impl Port {
-    pub fn name(&self) -> String {
-        let name = match self {
-            Port::Http => "HTTP",
-            Port::Https => "HTTPS",
-            Port::Ssh => "SSH",
-            Port::Vnc => "VNC",
-            Port::Ipmi => "IPMI",
-        };
-        name.to_owned()
-    }
-
     pub fn u16(&self) -> u16 {
         match self {
             Port::Http => 80,

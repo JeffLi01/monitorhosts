@@ -120,7 +120,7 @@ fn update(window: Weak<MainWindow>, manager: Arc<RwLock<Manager>>) {
     window
         .upgrade_in_event_loop(move |window| {
             trace!("updating MainWindowAdapter...");
-            let model = HostsStatusModel::from(snapshot).to_tree_view_model();
+            let model = HostsStatusModel::from(snapshot).construct_tree_view_model();
             let adapter = window.global::<MainWindowAdapter>();
             adapter.set_model(model);
             trace!("updating MainWindowAdapter...done");
@@ -133,7 +133,7 @@ struct HostsStatusModel {
 }
 
 impl HostsStatusModel {
-    fn to_tree_view_model(self) -> ModelRc<ModelRc<StandardListViewItem>> {
+    fn construct_tree_view_model(self) -> ModelRc<ModelRc<StandardListViewItem>> {
         let hosts: Vec<ModelRc<StandardListViewItem>> = self
             .hosts
             .into_iter()

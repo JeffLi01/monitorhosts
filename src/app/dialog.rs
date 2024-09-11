@@ -50,8 +50,10 @@ pub fn config_dialog(mgr: Arc<RwLock<Manager>>, index: usize) -> HostConfigDialo
         .expect("the index {index} should be valid");
     let dialog = HostConfigDialog::new().unwrap();
     dialog.set_dialog_title("配置".into());
-    let mut model = HostConfigModel::default();
-    model.name = SharedString::from(&host.name);
+    let mut model = HostConfigModel {
+        name: SharedString::from(&host.name),
+        ..Default::default()
+    };
     host.ports.iter().for_each(|(port, enabled)| match port {
         Port::Http => model.http = *enabled,
         Port::Https => model.https = *enabled,
