@@ -1,10 +1,13 @@
+use std::net::TcpStream;
 use std::{
-    net::IpAddr, sync::{
+    net::IpAddr,
+    sync::{
         atomic::{AtomicBool, Ordering},
         Arc, RwLock,
-    }, thread::{self, JoinHandle}, time::Duration
+    },
+    thread::{self, JoinHandle},
+    time::Duration,
 };
-use std::net::TcpStream;
 
 use surge_ping::{Client, Config, PingIdentifier, PingSequence, ICMP};
 use tokio::runtime::Runtime;
@@ -50,9 +53,11 @@ impl Monitor {
                 config.ports.iter().for_each(|(port, enabled)| {
                     if *enabled {
                         let status = tcping(&config.name, port.u16());
-                        mgr.write()
-                            .unwrap()
-                            .update(config.name.to_owned(), port.to_owned(), status);
+                        mgr.write().unwrap().update(
+                            config.name.to_owned(),
+                            port.to_owned(),
+                            status,
+                        );
                     }
                 });
             });
@@ -65,8 +70,10 @@ impl Monitor {
         let rt = Runtime::new().unwrap();
         threads.push(thread::spawn(move || {
             rt.block_on(async {
-                let client_v4 = Client::new(&Config::default()).expect("surge-ping Config for IPv4 should be created successfully");
-                let client_v6 = Client::new(&Config::builder().kind(ICMP::V6).build()).expect("surge-ping Config for IPv6 should be created successfully");
+                let client_v4 = Client::new(&Config::default())
+                    .expect("surge-ping Config for IPv4 should be created successfully");
+                let client_v6 = Client::new(&Config::builder().kind(ICMP::V6).build())
+                    .expect("surge-ping Config for IPv6 should be created successfully");
 
                 loop {
                     if flag.load(Ordering::Relaxed) {
@@ -75,16 +82,12 @@ impl Monitor {
                     let hosts = mgr.read().unwrap().hosts.clone();
                     for config in hosts {
                         let status = match config.name.parse() {
-                            Ok(IpAddr::V4(addr)) => {
-                                ping(&client_v4, IpAddr::V4(addr)).await
-                            }
-                            Ok(IpAddr::V6(addr)) => {
-                                ping(&client_v6, IpAddr::V6(addr)).await
-                            }
+                            Ok(IpAddr::V4(addr)) => ping(&client_v4, IpAddr::V4(addr)).await,
+                            Ok(IpAddr::V6(addr)) => ping(&client_v6, IpAddr::V6(addr)).await,
                             Err(e) => {
                                 error!("{} parse to ipaddr error: {}", config.name, e);
                                 PortStatus::Error
-                            },
+                            }
                         };
                         mgr.write()
                             .unwrap()
@@ -189,19 +192,17 @@ impl From<Snapshot> for HostsStatusModel {
 fn tcping(host: &str, port: u16) -> PortStatus {
     let target = std::format!("{host}:{port}");
     match target.parse() {
-        Ok(addr) => {
-            match TcpStream::connect_timeout(&addr, Duration::from_secs(1)) {
-                Ok(_) => PortStatus::On,
-                Err(err) => {
-                    error!("failed to connect '{target}': {err}");
-                    PortStatus::Off
-                }
+        Ok(addr) => match TcpStream::connect_timeout(&addr, Duration::from_secs(1)) {
+            Ok(_) => PortStatus::On,
+            Err(err) => {
+                error!("failed to connect '{target}': {err}");
+                PortStatus::Off
             }
         },
         Err(err) => {
             error!("failed to parse host '{target}': {err}");
             PortStatus::Error
-        },
+        }
     }
 }
 
@@ -214,6 +215,6 @@ async fn ping(client: &Client, addr: IpAddr) -> PortStatus {
         Err(err) => {
             warn!("ping '{}' error: {}", pinger.host, err);
             PortStatus::Off
-        },
+        }
     }
 }

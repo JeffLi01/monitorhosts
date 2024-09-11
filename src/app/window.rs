@@ -2,10 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use slint::*;
 
-use crate::{
-    manager::Manager,
-    ui::MainWindow,
-};
+use crate::{manager::Manager, ui::MainWindow};
 
 pub fn setup(mgr: Arc<RwLock<Manager>>) -> MainWindow {
     let window = MainWindow::new().unwrap();

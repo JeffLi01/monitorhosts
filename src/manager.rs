@@ -1,6 +1,7 @@
 use std::{
     collections::{BTreeMap, HashMap},
-    hash::Hash, path::Path,
+    hash::Hash,
+    path::Path,
 };
 
 use log::{error, trace, warn};
@@ -33,14 +34,14 @@ impl Manager {
             Err(err) => {
                 error!("failed to read file '{config:?}': {err}");
                 return None;
-            },
+            }
         };
         let hosts: Vec<HostConfig> = match serde_json::from_str(&content) {
             Ok(hosts) => hosts,
             Err(err) => {
                 error!("failed deserialize '{config:?}': {err}");
                 return None;
-            },
+            }
         };
         Some(Self {
             hosts,
@@ -205,7 +206,15 @@ pub struct Snapshot {
 }
 
 impl Snapshot {
-    pub fn new(configs: Vec<HostConfig>, liveness: HashMap<String, PortStatus>, status: HashMap<(String, Port), PortStatus>) -> Self {
-        Self { configs, liveness, status }
+    pub fn new(
+        configs: Vec<HostConfig>,
+        liveness: HashMap<String, PortStatus>,
+        status: HashMap<(String, Port), PortStatus>,
+    ) -> Self {
+        Self {
+            configs,
+            liveness,
+            status,
+        }
     }
 }

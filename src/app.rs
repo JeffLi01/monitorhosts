@@ -5,11 +5,7 @@ mod dialog;
 mod window;
 
 use crate::{controllers::monitor::Monitor, hotkey::HotkeyWorker};
-use crate::{
-    manager::Manager,
-    tray::Tray,
-    ui::MainWindow,
-};
+use crate::{manager::Manager, tray::Tray, ui::MainWindow};
 
 pub struct Application {
     config: PathBuf,

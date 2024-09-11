@@ -61,12 +61,13 @@ impl Tray {
                     }
                     Ok(Message::ShowMainWindow) => {
                         trace!("show main window...");
-                        window_weak.upgrade_in_event_loop(|window| {
-                            trace!("before showing main window");
-                            window.show().unwrap();
-                            trace!("after showing main window");
-                        })
-                        .unwrap();
+                        window_weak
+                            .upgrade_in_event_loop(|window| {
+                                trace!("before showing main window");
+                                window.show().unwrap();
+                                trace!("after showing main window");
+                            })
+                            .unwrap();
                     }
                     // Ok(Message::Config) => {
                     //     println!("Config");
@@ -78,9 +79,7 @@ impl Tray {
                 }
             }
         });
-        Self {
-            thread,
-        }
+        Self { thread }
     }
 
     pub fn join(self) {
