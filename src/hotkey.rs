@@ -6,6 +6,7 @@ use std::time::Duration;
 use global_hotkey::HotKeyState;
 use global_hotkey::{hotkey::{Code, HotKey, Modifiers}, GlobalHotKeyEvent, GlobalHotKeyManager};
 use log::{error, info, trace, warn};
+use notify_rust::Notification;
 use url::Url;
 
 use crate::manager::{HostConfig, Manager};
@@ -53,8 +54,14 @@ impl HotkeyWorker {
                                         continue;
                                     },
                                 };
-                                let host = HostConfig::with_all_enable(name);
+                                let host = HostConfig::with_all_enable(name.clone());
                                 manager.write().unwrap().add_host(host);
+                                if let Err(err) = Notification::new()
+                                    .summary("MonitorHosts")
+                                    .body(&format!("添加主机：'{name}'"))
+                                    .show() {
+                                        error!("failed to show notification for adding host {name}: {err}");
+                                    }
                             },
                             HotKeyState::Released => {},
                         }
